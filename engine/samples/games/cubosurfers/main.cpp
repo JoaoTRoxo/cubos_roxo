@@ -1,6 +1,7 @@
 #include <cubos/engine/assets/plugin.hpp>
 #include <cubos/engine/collisions/colliding_with.hpp>
 #include <cubos/engine/defaults/plugin.hpp>
+#include <cubos/engine/imgui/plugin.hpp>
 #include <cubos/engine/input/plugin.hpp>
 #include <cubos/engine/render/lights/environment.hpp>
 #include <cubos/engine/render/voxels/palette.hpp>
@@ -12,6 +13,7 @@
 
 #include "obstacle.hpp"
 #include "player.hpp"
+#include "score.hpp"
 #include "spawner.hpp"
 
 using namespace cubos::engine;
@@ -30,10 +32,15 @@ int main(int argc, char** argv)
     cubos.plugin(spawnerPlugin);
     cubos.plugin(obstaclePlugin);
     cubos.plugin(playerPlugin);
+    cubos.plugin(scorePlugin);
 
     cubos.startupSystem("configure settings").before(settingsTag).call([](Settings& settings) {
         settings.setString("assets.app.osPath", APP_ASSETS_PATH);
         settings.setString("assets.builtin.osPath", BUILTIN_ASSETS_PATH);
+    });
+
+    cubos.startupSystem("set ImGui context").after(imguiInitTag).call([](ImGuiContextHolder& holder) {
+        ImGui::SetCurrentContext(holder.context);
     });
 
     cubos.startupSystem("set the palette, environment, input bindings and spawn the scene")
@@ -57,16 +64,26 @@ int main(int argc, char** argv)
                     cmds.destroy(ent);
                 }
 
+                Obstacle::speedMultiplier = 1.0F;
+
                 cmds.spawn(assets.read(SceneAsset)->blueprint);
             }
         });
 
     cubos.system("detect player vs obstacle collisions")
-        .call([](Query<const Player&, const CollidingWith&, const Obstacle&> collisions) {
+        .call([](Query<const Player&, const CollidingWith&, const Obstacle&> collisions, const Assets& assets,
+                 Commands cmds, Query<Entity> all) {
             for (auto [player, collidingWith, obstacle] : collisions)
             {
                 CUBOS_INFO("Player collided with an obstacle!");
-                (void)player; // here to shut up 'unused variable warning', you can remove it
+                for (auto [ent] : all)
+                {
+                    cmds.destroy(ent);
+                }
+                Obstacle::speedMultiplier = 1.0F;
+
+                cmds.spawn(assets.read(SceneAsset)->blueprint);
+                (void)player;
             }
         });
 

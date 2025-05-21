@@ -10,6 +10,10 @@
 
 using namespace cubos::engine;
 
+// Initialize static members
+float Obstacle::speedMultiplier = 1.0F;
+float Obstacle::speedIncreaseRate = 0.5F;
+
 CUBOS_REFLECT_IMPL(Obstacle)
 {
     return cubos::core::ecs::TypeBuilder<Obstacle>("Obstacle")
@@ -25,11 +29,18 @@ void obstaclePlugin(Cubos& cubos)
 
     cubos.component<Obstacle>();
 
+    // Add a system to increase the speed over time
+    cubos.system("increase game speed").call([](const DeltaTime& dt) {
+        // Increase speed based on elapsed time
+        Obstacle::speedMultiplier += Obstacle::speedIncreaseRate * dt.value();
+    });
+
     cubos.system("move obstacles")
         .call([](Commands cmds, const DeltaTime& dt, Query<Entity, const Obstacle&, Position&> obstacles) {
             for (auto [ent, obstacle, position] : obstacles)
             {
-                position.vec += obstacle.velocity * dt.value();
+                // Apply the speed multiplier to obstacle velocity
+                position.vec += obstacle.velocity * Obstacle::speedMultiplier * dt.value();
                 position.vec.y = glm::abs(glm::sin(position.vec.z * 0.15F)) * 1.5F;
 
                 if (position.vec.z < obstacle.killZ)
