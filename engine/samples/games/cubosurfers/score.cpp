@@ -31,7 +31,7 @@ void scorePlugin(Cubos& cubos)
             for (auto [score] : scores)
             {
                 // Update score
-                score.value += dt.value();
+                score.value += dt.value() * 10;
 
                 // Display score prominently
                 ImGui::TextColored(ImVec4(1, 1, 0, 1), "Score: %.0f", score.value);

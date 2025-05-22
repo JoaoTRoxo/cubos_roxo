@@ -12,7 +12,7 @@ using namespace cubos::engine;
 
 // Initialize static members
 float Obstacle::speedMultiplier = 1.0F;
-float Obstacle::speedIncreaseRate = 0.5F;
+float Obstacle::speedIncreaseRate = 0.2F;
 
 CUBOS_REFLECT_IMPL(Obstacle)
 {
